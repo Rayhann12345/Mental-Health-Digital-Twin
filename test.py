@@ -2,6 +2,7 @@ import sys
 sys.path.insert(0, r'C:\Users\ritvi\Documents\mental_health_twin')
 
 from data_module import create_database, add_user, add_entry, get_baseline, get_all_baselines
+from anomaly_module import load_user_data, get_model_prediction, evaluate_anomalies
 
 # Setup
 create_database()
@@ -55,3 +56,16 @@ print("Entry 2 (3 days ago): stress = 5  → MEDIUM weight")
 print("Entry 3 (today):      stress = 2  → HIGH weight (recent)")
 print(f"Exponential decay weighted average → stress baseline = {round(all_baselines['stress'], 2)}")
 print("\nRecent improvement is reflected more than the bad week!")
+
+if __name__ == "__main__":
+    try:
+        TARGET_USER = 1
+        
+        history, actual, parameter_list, full_df = load_user_data(TARGET_USER)
+        predicted = get_model_prediction(history, num_features=len(parameter_list))
+        is_anomaly, weight = evaluate_anomalies(actual.numpy(), predicted, parameter_list, full_df)
+        
+        print(f"Recommended update weight for database baseline: {weight:.2f}")
+        
+    except Exception as e:
+        print(f"Error running pipeline: {e}")
