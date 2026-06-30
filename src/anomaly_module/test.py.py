@@ -1,5 +1,7 @@
 import sys
-sys.path.insert(0, r'C:\Users\ritvi\Documents\mental_health_twin')
+import os
+
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from data_module import create_database, add_user, add_entry, get_baseline, get_all_baselines
 from anomaly_module import load_user_data, get_model_prediction, evaluate_anomalies

@@ -1,5 +1,9 @@
-from risk_assessment import assess_risk
+import sys
+import os
 
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src", "risk_assessment"))
+
+from risk_assessment import assess_risk
 
 test_cases = [
     {
