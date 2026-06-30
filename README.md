@@ -98,7 +98,8 @@ The terminal will display:
 
 ```.
 
-### 3. Anomaly Detection Module (`src/anomaly_module/`)
+```markdown
+## Anomaly Detection Module
 
 The anomaly detection implementation is located in:
 
@@ -111,6 +112,34 @@ src/anomaly_module/
 ```
 
 The module extracts personalized psychological and behavioral time-series history from the local database, utilizes a multivariate PatchTST transformer model to forecast expected metrics, and calculates deviations using Mean Absolute Error (MAE) to identify personalized anomalies.
+
+* Anomaly Detection Testing
+A verification and testing script is provided in:
+
+```text
+src/anomaly_module/test.py
+
+```
+
+* Running the Anomaly Test
+From the repository root, execute:
+
+```
+python src/anomaly_module/test.py
+
+```
+
+The terminal will display:
+
+* A breakdown of individual parameter baselines,
+* Exponential decay weight representations,
+* Global Deviation Scores and overall anomaly status,
+* Top Contributing Parameters and unique historical correlation checks (if an anomaly is triggered),
+* The recommended baseline update weight passed back to data storage.
+
+```
+
+```
 
 ### 4. Risk Assessment Module (`src/risk_assessment/`)
 
