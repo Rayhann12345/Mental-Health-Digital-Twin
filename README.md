@@ -7,14 +7,14 @@
 This project aims to build an AI-driven digital twin that monitors an individual's mental well-being through daily journal entries. By extracting 22 specific behavioral and psychological parameters, the system continuously learns a user's personalized baseline. It then identifies anomalous deviations from this established normal to perform targeted risk assessments and provide actionable insights via a centralized dashboard.
 
 ## Planned Workflow Pipeline
-**Journal Entry** → **LLM Parameter Extraction** → **Personalized Baseline** → **Anomaly Detection** → **Risk Assessment**
+*Journal Entry → LLM Parameter Extraction → Personalized Baseline → Anomaly Detection → Risk Assessment
 
 ### Pipeline Breakdown
-* **Journal Entry:** The user submits a daily text-based journal entry into the system via the frontend interface. This text acts as the primary raw data input for capturing their current mental, emotional, and behavioral state.
-* **LLM Parameter Extraction:** A Large Language Model processes the raw journal text to isolate and evaluate specific psychological indicators. It translates the qualitative text into structured numerical scores across 22 distinct behavioral parameters.
-* **Personalized Baseline:** The system logs the daily scores in a SQLite database and updates the user's historical profile using an Exponential Decay Weighted Average. This allows the system to continuously learn their unique "normal" state while dampening extreme outliers to protect baseline accuracy.
-* **Anomaly Detection:** A PatchTST time-series model forecasts expected daily values and compares them against the actual incoming data. If the deviation crosses a strict error threshold, it flags the day as an anomaly and isolates the specific parameters that caused the alert.
-* **Risk Assessment:** The isolated anomalous parameters are mapped against clinical blueprints derived from foundational psychological research. Based on the frequency and weight of these anomalies (categorized as Primary, Secondary, or Tertiary), the engine determines if a specific mental health issue should be flagged.
+* Journal Entry: The user submits a daily text-based journal entry into the system via the frontend interface. This text acts as the primary raw data input for capturing their current mental, emotional, and behavioral state.
+* LLM Parameter Extraction A Large Language Model processes the raw journal text to isolate and evaluate specific psychological indicators. It translates the qualitative text into structured numerical scores across 22 distinct behavioral parameters.
+* Personalized Baseline: The system logs the daily scores in a SQLite database and updates the user's historical profile using an Exponential Decay Weighted Average. This allows the system to continuously learn their unique "normal" state while dampening extreme outliers to protect baseline accuracy.
+* Anomaly Detection: A PatchTST time-series model forecasts expected daily values and compares them against the actual incoming data. If the deviation crosses a strict error threshold, it flags the day as an anomaly and isolates the specific parameters that caused the alert.
+* Risk Assessment: The isolated anomalous parameters are mapped against clinical blueprints derived from foundational psychological research. Based on the frequency and weight of these anomalies (categorized as Primary, Secondary, or Tertiary), the engine determines if a specific mental health issue should be flagged.
 
 ---
 
