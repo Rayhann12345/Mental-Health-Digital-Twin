@@ -1,4 +1,4 @@
-Here is the fully cleaned up and perfectly formatted version, ready to be pasted directly into your GitHub `README.md` file. I have fixed the markdown syntax, organized the headers, unified the code blocks, and aligned the list formatting.
+
 
 ```markdown
 # Personalized Mental Health Digital Twin using AI
