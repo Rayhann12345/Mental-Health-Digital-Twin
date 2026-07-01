@@ -1,7 +1,7 @@
 import sys
 import os
 
-sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 from data_module import create_database, add_user, add_entry, get_baseline, get_all_baselines
 from anomaly_module import load_user_data, get_model_prediction, evaluate_anomalies
