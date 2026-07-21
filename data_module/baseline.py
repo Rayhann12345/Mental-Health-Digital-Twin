@@ -8,7 +8,7 @@ PARAMETERS = [
     'emotional_exhaustion', 'optimism', 'motivation', 'task_engagement',
     'social_connectedness', 'social_support', 'self_efficacy', 'coping_ability',
     'resilience', 'concentration', 'mental_fatigue', 'rumination', 'self_talk_score',
-    'sleep_quality', 'physical_fatigue'
+    'sleep_quality', 'sleep_duration', 'physical_fatigue', 'cognitive_functioning'
 ]
 
 DECAY_FACTOR = 0.1
@@ -18,12 +18,13 @@ def calculate_baseline(user_id):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
+    
     cursor.execute('''
         SELECT timestamp, sentiment_score, stress, anxiety, sadness, frustration,
                emotional_exhaustion, optimism, motivation, task_engagement,
                social_connectedness, social_support, self_efficacy, coping_ability,
                resilience, concentration, mental_fatigue, rumination, self_talk_score,
-               sleep_quality, physical_fatigue
+               sleep_quality, sleep_duration, physical_fatigue, cognitive_functioning
         FROM Entries
         WHERE user_id = ?
         ORDER BY timestamp DESC
@@ -36,6 +37,7 @@ def calculate_baseline(user_id):
         conn.close()
         return
 
+    
     now = datetime.now()
     weights = []
 
@@ -47,21 +49,23 @@ def calculate_baseline(user_id):
 
     weights = np.array(weights)
 
+   
     for i, param in enumerate(PARAMETERS):
         values = np.array([entry[i + 1] for entry in entries])
 
+        # Outlier dampening
         mean = np.mean(values)
         std = np.std(values)
         dampened_weights = weights.copy()
 
-        # Outlier dampening only applied after 15 entries
-        if len(entries) > 15:
-            for j, value in enumerate(values):
-                if abs(value - mean) > 2 * std:
-                    dampened_weights[j] *= 0.1
+        for j, value in enumerate(values):
+            if abs(value - mean) > 2 * std:
+                dampened_weights[j] *= 0.1
+
 
         baseline_value = np.average(values, weights=dampened_weights)
 
+        
         cursor.execute('''
             INSERT OR REPLACE INTO Baselines (user_id, parameter_name, baseline_value, last_updated)
             VALUES (?, ?, ?, ?)
@@ -70,3 +74,4 @@ def calculate_baseline(user_id):
     conn.commit()
     conn.close()
     print(f"Baseline calculated and saved for user {user_id}!")
+

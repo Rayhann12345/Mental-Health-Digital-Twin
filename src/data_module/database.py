@@ -2,12 +2,10 @@ import os
 import sqlite3
 
 def create_database():
-
     DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mental_health.db')
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
-    # Create Users table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS Users (
             user_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -17,7 +15,6 @@ def create_database():
         )
     ''')
 
-    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS Entries (
             entry_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -43,14 +40,11 @@ def create_database():
             rumination REAL,
             self_talk_score REAL,
             sleep_quality REAL,
-            sleep_duration REAL,
             physical_fatigue REAL,
-            cognitive_functioning REAL,
             FOREIGN KEY (user_id) REFERENCES Users(user_id)
         )
     ''')
 
-   
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS Baselines (
             user_id INTEGER,
@@ -65,5 +59,3 @@ def create_database():
     conn.commit()
     conn.close()
     print("Database created successfully!")
-
-
