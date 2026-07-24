@@ -50,6 +50,7 @@ def create_database():
             user_id INTEGER,
             parameter_name TEXT,
             baseline_value REAL,
+            std_dev REAL,
             last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (user_id, parameter_name),
             FOREIGN KEY (user_id) REFERENCES Users(user_id)

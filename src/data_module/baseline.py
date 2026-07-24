@@ -60,12 +60,17 @@ def calculate_baseline(user_id):
                 if abs(value - mean) > 2 * std:
                     dampened_weights[j] *= 0.1
 
+        # Calculate weighted average (baseline)
         baseline_value = np.average(values, weights=dampened_weights)
 
+        # Calculate weighted standard deviation
+        variance = np.average((values - baseline_value) ** 2, weights=dampened_weights)
+        weighted_std_dev = np.sqrt(variance)
+
         cursor.execute('''
-            INSERT OR REPLACE INTO Baselines (user_id, parameter_name, baseline_value, last_updated)
-            VALUES (?, ?, ?, ?)
-        ''', (user_id, param, baseline_value, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+            INSERT OR REPLACE INTO Baselines (user_id, parameter_name, baseline_value, std_dev, last_updated)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (user_id, param, baseline_value, weighted_std_dev, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
     conn.commit()
     conn.close()
