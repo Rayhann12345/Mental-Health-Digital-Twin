@@ -90,3 +90,18 @@ def load_anomaly_inputs(user_id):
             })
 
     return evaluation_inputs
+
+def update_sliding_window(user_id, param_name, updated_window):
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    window_string = json.dumps(updated_window)
+    
+    cursor.execute('''
+        REPLACE INTO SlidingWindows (user_id, parameter_name, window_data, last_updated)
+        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+    ''', (user_id, param_name, window_string))
+    
+    conn.commit()
+    conn.close()
