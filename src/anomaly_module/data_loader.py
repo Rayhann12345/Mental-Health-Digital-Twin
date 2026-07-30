@@ -1,5 +1,6 @@
 import os
 import sqlite3
+import json
 
 def get_db_connection():
 
@@ -15,8 +16,7 @@ def load_anomaly_inputs(user_id):
 
     conn = get_db_connection()
     cursor = conn.cursor()
-
-
+    
     cursor.execute('''
         SELECT * FROM Entries 
         WHERE user_id = ? 
@@ -27,6 +27,17 @@ def load_anomaly_inputs(user_id):
     if not latest_entry:
         conn.close()
         raise ValueError(f"No journal entries found for user_id: {user_id}")
+
+    cursor.execute('''
+        SELECT window_data FROM SlidingWindows 
+        WHERE user_id = ? AND parameter_name = ?
+    ''', (user_id, param_name))
+    result = cursor.fetchone()
+
+    if result:
+        historical_window = json.loads(result['window_data']) 
+    else:
+        historical_window = []
 
 
     cursor.execute('''
@@ -75,7 +86,7 @@ def load_anomaly_inputs(user_id):
                 "baseline": baseline,
                 "std_dev": std_dev,
                 "max_window_length": max_window_length,
-                "historical_window": [] 
+                "historical_window": historical_window 
             })
 
     return evaluation_inputs
