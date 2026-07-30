@@ -1,0 +1,81 @@
+import os
+import sqlite3
+
+def get_db_connection():
+
+    base_dir = os.path.dirname(os.path.dirname(__file__))
+    db_path = os.path.join(base_dir, 'mental_health.db')
+    
+    # Enable row factory to easily access columns by their name
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def load_anomaly_inputs(user_id):
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+
+    cursor.execute('''
+        SELECT * FROM Entries 
+        WHERE user_id = ? 
+        ORDER BY timestamp DESC LIMIT 1
+    ''', (user_id,))
+    latest_entry = cursor.fetchone()
+
+    if not latest_entry:
+        conn.close()
+        raise ValueError(f"No journal entries found for user_id: {user_id}")
+
+
+    cursor.execute('''
+        SELECT parameter_name, baseline_value, std_dev 
+        FROM Baselines 
+        WHERE user_id = ?
+    ''', (user_id,))
+    baselines_data = cursor.fetchall()
+    conn.close()
+
+    # Convert baselines into a quick lookup dictionary
+    
+    baseline_lookup = {
+        row['parameter_name']: {
+            'baseline': row['baseline_value'], 
+            'std_dev': row['std_dev']
+        } 
+        for row in baselines_data
+    }
+
+
+    long_window_params = {
+        "self_efficacy", 
+        "coping_ability", 
+        "social_connectedness", 
+        "social_support"
+    }
+
+
+    excluded_columns = {'entry_id', 'user_id', 'timestamp', 'journal_text'}
+
+    evaluation_inputs = []
+    
+    for key in latest_entry.keys():
+        if key not in excluded_columns and key in baseline_lookup:
+            param_name = key
+            current_value = latest_entry[key]
+            baseline = baseline_lookup[key]['baseline']
+            std_dev = baseline_lookup[key]['std_dev']
+            
+            max_window_length = 14 if param_name in long_window_params else 7
+            
+            evaluation_inputs.append({
+                "param_name": param_name,
+                "current_value": current_value,
+                "baseline": baseline,
+                "std_dev": std_dev,
+                "max_window_length": max_window_length,
+                "historical_window": [] 
+            })
+
+    return evaluation_inputs
