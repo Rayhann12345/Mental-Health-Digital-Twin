@@ -56,6 +56,17 @@ def create_database():
             FOREIGN KEY (user_id) REFERENCES Users(user_id)
         )
     ''')
+    
+    cursor.execute('''
+            CREATE TABLE IF NOT EXISTS SlidingWindows (
+                user_id INTEGER,
+                parameter_name TEXT,
+                window_data TEXT,
+                last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (user_id, parameter_name),
+                FOREIGN KEY (user_id) REFERENCES Users(user_id)
+            )
+        ''')
 
     conn.commit()
     conn.close()
