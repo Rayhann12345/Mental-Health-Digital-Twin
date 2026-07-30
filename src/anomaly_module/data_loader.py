@@ -85,8 +85,8 @@ def load_anomaly_inputs(user_id):
                 "current_value": current_value,
                 "baseline": baseline,
                 "std_dev": std_dev,
-                "max_window_length": max_window_length,
-                "historical_window": historical_window 
+                "historical_window": historical_window,
+                "max_window_length": max_window_length
             })
 
     return evaluation_inputs
