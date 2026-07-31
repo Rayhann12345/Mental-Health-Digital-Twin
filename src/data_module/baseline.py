@@ -19,9 +19,10 @@ LONG_TERM_PARAMETERS = [
 
 DECAY_FACTOR = 0.1
 
-# Decaying multipliers applied starting at the flagged entry, fading back to normal
-PROTECT_MULTIPLIERS = [0.1, 0.3, 0.6]
-ADAPT_MULTIPLIERS = [3.0, 2.0, 1.5]
+# Flat, single-entry multipliers. No decay — applies only to the entry
+# immediately following the flagged one (day-by-day, not a multi-day fade).
+PROTECT_MULTIPLIER = 0.1
+ADAPT_MULTIPLIER = 3.0
 
 
 def calculate_baseline(user_id):
@@ -70,30 +71,23 @@ def calculate_baseline(user_id):
             std = np.std(values)
             final_weights = recency_weights.copy()
 
-            if len(entries) > 15:
+            if len(entries) > 20:
                 for j, value in enumerate(values):
                     if abs(value - mean) > 2 * std:
                         final_weights[j] *= 0.1
 
-            active_status = None
-            steps_remaining = 0
-
-            for j, flags in enumerate(parsed_flags):
-                status = flags.get(param, 'normal').lower()
-
-                if status in ('protect', 'adapt'):
-                    active_status = status
-                    steps_remaining = 3
-
-                if active_status and steps_remaining > 0:
-                    step_index = 3 - steps_remaining
-                    if active_status == 'protect':
-                        final_weights[j] *= PROTECT_MULTIPLIERS[step_index]
-                    elif active_status == 'adapt':
-                        final_weights[j] *= ADAPT_MULTIPLIERS[step_index]
-                    steps_remaining -= 1
-                    if steps_remaining == 0:
-                        active_status = None
+            # Day-by-day anomaly weighting: each entry's weight is adjusted
+            # based on the PREVIOUS entry's flag for this parameter (not its
+            # own flag). No decay across multiple entries — the effect
+            # applies to exactly one entry, then resets to normal.
+            for j in range(1, len(entries)):
+                previous_status = parsed_flags[j - 1].get(param, 'normal').lower()
+                if previous_status == 'protect':
+                    final_weights[j] *= PROTECT_MULTIPLIER
+                elif previous_status == 'adapt':
+                    final_weights[j] *= ADAPT_MULTIPLIER
+                # 'normal' (or no flag / before anomaly detection kicks in
+                # at entry 27) leaves the weight unchanged.
 
             baseline_value = np.average(values, weights=final_weights)
             variance = np.average((values - baseline_value) ** 2, weights=final_weights)
