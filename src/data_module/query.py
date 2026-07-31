@@ -1,41 +1,56 @@
-import os
 import sqlite3
+import os
 
-def get_baseline(user_id, parameter_name):
-    DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mental_health.db')
-    conn = sqlite3.connect(DB_PATH)
+def get_db_connection():
+    base_dir = os.path.dirname(os.path.dirname(__file__))
+    db_path = os.path.join(base_dir, 'mental_health.db')
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def get_user_id_by_email(email):
+    conn = get_db_connection()
     cursor = conn.cursor()
-
-    cursor.execute('''
-        SELECT baseline_value FROM Baselines
-        WHERE user_id = ? AND parameter_name = ?
-    ''', (user_id, parameter_name))
-
+    cursor.execute('SELECT user_id FROM Users WHERE email = ?', (email,))
     result = cursor.fetchone()
-    conn.close()
-
+    
     if result:
-        return result[0]
+        user_id = result['user_id']
     else:
-        print(f"No baseline found for user {user_id} and parameter {parameter_name}")
-        return None
-
-def get_all_baselines(user_id):
-    DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mental_health.db')
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-
-    cursor.execute('''
-        SELECT parameter_name, baseline_value FROM Baselines
-        WHERE user_id = ?
-    ''', (user_id,))
-
-    results = cursor.fetchall()
+        username = email.split('@')[0]
+        cursor.execute('INSERT INTO Users (username, email) VALUES (?, ?)', (username, email))
+        user_id = cursor.lastrowid
+        
+    conn.commit()
     conn.close()
+    return user_id
 
-    if results:
-        baselines = {row[0]: row[1] for row in results}
-        return baselines
-    else:
-        print(f"No baselines found for user {user_id}")
-        return None
+def get_recent_journals(user_id, limit=13):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT journal_text FROM Entries 
+        WHERE user_id = ? AND journal_text IS NOT NULL
+        ORDER BY timestamp DESC LIMIT ?
+    ''', (user_id, limit))
+    
+    rows = cursor.fetchall()
+    entries = [row['journal_text'] for row in reversed(rows)]
+    conn.close()
+    return entries
+
+def save_new_entry(user_id, journal_text, scores):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    columns = ['user_id', 'journal_text'] + list(scores.keys())
+    placeholders = ', '.join(['?'] * len(columns))
+    values = [user_id, journal_text] + list(scores.values())
+    
+    query = f'''
+        INSERT INTO Entries ({', '.join(columns)}) 
+        VALUES ({placeholders})
+    '''
+    cursor.execute(query, values)
+    conn.commit()
+    conn.close()
