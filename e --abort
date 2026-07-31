@@ -1,0 +1,105 @@
+[33mcommit ce046b9b5f10d2e174835ccb509479700f37b890[m
+Author: Rayhann12345 <rehansharief258@gmail.com>
+Date:   Fri Jul 31 19:37:13 2026 +0530
+
+    MHA
+
+[1mdiff --git a/gemma_test.py b/gemma_test.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..a5ebe17[m
+[1m--- /dev/null[m
+[1m+++ b/gemma_test.py[m
+[36m@@ -0,0 +1,92 @@[m
+[32m+[m[32mimport requests[m
+[32m+[m
+[32m+[m[32mAPI_KEY = "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"[m
+[32m+[m
+[32m+[m[32mPROMPT_PATH = "src/mental_health_assessment/v2/prompt.md"[m
+[32m+[m[32mMODEL = "nvidia/nemotron-3-super-120b-a12b:free"[m
+[32m+[m
+[32m+[m[32m# Read the complete original V2 prompt[m
+[32m+[m[32mwith open(PROMPT_PATH, "r", encoding="utf-8") as file:[m
+[32m+[m[32m    runtime_prompt = file.read()[m
+[32m+[m
+[32m+[m[32mprint("Sending the original V2 prompt...")[m
+[32m+[m[32mprint("Characters sent:", len(runtime_prompt))[m
+[32m+[m
+[32m+[m[32mresponse = requests.post([m
+[32m+[m[32m    "https://openrouter.ai/api/v1/chat/completions",[m
+[32m+[m[32m    headers={[m
+[32m+[m[32m        "Authorization": f"Bearer {API_KEY}",[m
+[32m+[m[32m        "Content-Type": "application/json"[m
+[32m+[m[32m    },[m
+[32m+[m[32m    json={[m
+[32m+[m[32m        "model": MODEL,[m
+[32m+[m[32m        "messages": [[m
+[32m+[m[32m            {[m
+[32m+[m[32m                "role": "system",[m
+[32m+[m[32m                "content": runtime_prompt[m
+[32m+[m[32m            },[m
+[32m+[m[32m            {[m
+[32m+[m[32m                "role": "user",[m
+[32m+[m[32m                "content": ([m
+[32m+[m[32m                    "Confirm that you received and understood the complete "[m
+[32m+[m[32m                    "assessment instructions. Reply in no more than two sentences."[m
+[32m+[m[32m                )[m
+[32m+[m[32m            }[m
+[32m+[m[32m        ],[m
+[32m+[m[32m        "temperature": 0,[m
+[32m+[m[32m        "max_tokens": 150[m
+[32m+[m[32m    },[m
+[32m+[m[32m    timeout=180[m
+[32m+[m[32m)[m
+[32m+[m
+[32m+[m[32mprint("\nHTTP status:", response.status_code)[m
+[32m+[m
+[32m+[m[32mdata = response.json()[m
+[32m+[m
+[32m+[m[32mif response.status_code != 200:[m
+[32m+[m[32m    print("\nRequest failed:")[m
+[32m+[m[32m    print(data)[m
+[32m+[m[32melse:[m
+[32m+[m[32m    print("\nModel used:", data.get("model"))[m
+[32m+[m
+[32m+[m[32m    print("\nModel response:")[m
+[32m+[m[32m    print(data["choices"][0]["message"]["content"])[m
+[32m+[m
+[32m+[m[32m    usage = data.get("usage", {})[m
+[32m+[m
+[32m+[m[32m    print("\nToken usage:")[m
+[32m+[m[32m    print("Prompt tokens:", usage.get("prompt_tokens"))[m
+[32m+[m[32m    print("Completion tokens:", usage.get("completion_tokens"))[m
+[32m+[m[32m    print("Total tokens:", usage.get("total_tokens"))[m
+[32m+[m
+[32m+[m[32mfor i in range(10):[m
+[32m+[m[32m    print(f"\nRequest {i+1}")[m
+[32m+[m
+[32m+[m[32m    response = requests.post([m
+[32m+[m[32m        "https://openrouter.ai/api/v1/chat/completions",[m
+[32m+[m[32m        headers={[m
+[32m+[m[32m            "Authorization": f"Bearer {API_KEY}",[m
+[32m+[m[32m            "Content-Type": "application/json"[m
+[32m+[m[32m        },[m
+[32m+[m[32m        json={[m
+[32m+[m[32m            "model": MODEL,[m
+[32m+[m[32m            "messages": [[m
+[32m+[m[32m                {[m
+[32m+[m[32m                    "role": "system",[m
+[32m+[m[32m                    "content": runtime_prompt[m
+[32m+[m[32m                },[m
+[32m+[m[32m                {[m
+[32m+[m[32m                    "role": "user",[m
+[32m+[m[32m                    "content": "Reply with only the word OK."[m
+[32m+[m[32m                }[m
+[32m+[m[32m            ],[m
+[32m+[m[32m            "temperature": 0,[m
+[32m+[m[32m            "max_tokens": 5[m
+[32m+[m[32m        }[m
+[32m+[m[32m    )[m
+[32m+[m
+[32m+[m[32m    print(response.status_code)[m
+[32m+[m
+[32m+[m[32m    if response.status_code != 200:[m
+[32m+[m[32m        print(response.json())[m
+[32m+[m[32m        break[m
+\ No newline at end of file[m
