@@ -1,34 +1,617 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Mental Health Digital Twin</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Digital Twin — Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  :root{
+    --bg: #0B0F14;
+    --panel: #10151C;
+    --panel-alt: #151C25;
+    --border: #232C38;
+    --border-soft: #1A222C;
+    --text: #E8EBF0;
+    --text-dim: #7C879C;
+    --text-faint: #4E5868;
+    --signal: #7C9EFF;
+    --signal-dim: rgba(124,158,255,0.14);
+    --organic: #F2A65A;
+    --organic-dim: rgba(242,166,90,0.14);
+    --danger: #FF6B6B;
+    --radius: 10px;
+    --radius-lg: 12px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(124,158,255,0.09), transparent 60%),
+      radial-gradient(ellipse 700px 400px at 85% 90%, rgba(242,166,90,0.07), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+  }
+  a{color:inherit;text-decoration:none;}
+
+  /* ---------- NAV ---------- */
+  .nav{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px 32px;
+    border-bottom:1px solid var(--border-soft);
+    position:sticky;top:0;z-index:20;
+    background:rgba(11,15,20,0.85);
+    backdrop-filter:blur(10px);
+  }
+  .nav-side{display:flex;align-items:center;gap:12px;min-width:320px;}
+  .nav-side.right{justify-content:flex-end;}
+  .brand{display:flex;flex-direction:column;align-items:center;line-height:1;}
+  .brand .eyebrow{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.28em;color:var(--text-faint);margin-bottom:6px;text-transform:uppercase;}
+  .brand .title{font-family:'Fraunces',serif;font-weight:600;font-size:20px;letter-spacing:0.01em;}
+  
+  .btn-nav{
+    font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.05em;
+    padding:8px 14px;border-radius:8px;
+    display:flex;align-items:center;gap:8px;
+    transition:all .18s ease; cursor:pointer; background:transparent;
+  }
+  .btn-nav svg{width:13px;height:13px;}
+  .btn-graph{color:var(--signal);border:1px solid rgba(124,158,255,0.35);}
+  .btn-graph:hover{background:var(--signal-dim);border-color:var(--signal);}
+  .btn-trajectory{color:var(--organic);border:1px solid rgba(242,166,90,0.35);}
+  .btn-trajectory:hover{background:var(--organic-dim);border-color:var(--organic);}
+  .btn-back{color:var(--text-dim);border:1px solid var(--border);}
+  .btn-back:hover{color:var(--organic);border-color:rgba(242,166,90,0.35);background:var(--organic-dim);}
+  
+  .btn-clear{
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.05em;
+    color:var(--danger);border:1px solid rgba(255,107,107,0.3);padding:7px 12px;border-radius:8px;
+    background:transparent;cursor:pointer;transition:all .18s ease;
+  }
+  .btn-clear:hover{background:rgba(255,107,107,0.1);border-color:var(--danger);}
+
+  .clock-wrap{text-align:right;font-family:'JetBrains Mono',monospace;}
+  .clock-label{font-size:9px;letter-spacing:0.24em;color:var(--text-faint);margin-bottom:2px;}
+  #live-clock{font-size:14px;color:var(--text-dim);letter-spacing:0.03em;}
+
+  /* ---------- VIEW SYSTEM ---------- */
+  .view-container { display: none; width: 100%; flex: 1; animation: fadeIn 0.4s ease; }
+  .view-container.active { display: flex; flex-direction: column; }
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+  main { flex: 1; display: flex; flex-direction: column; align-items: center; }
+
+  /* ---------- INITIALIZE VIEW ---------- */
+  #view-init { padding: 60px 24px; align-items: center; justify-content: center; }
+  .init-stage { width: 100%; max-width: 520px; display: flex; flex-direction: column; gap: 32px; }
+  .hero-line{text-align:center;display:flex;flex-direction:column;gap:8px;}
+  .hero-eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.3em;color:var(--signal);text-transform:uppercase;}
+  .hero-title{font-family:'Fraunces',serif;font-style:italic;font-weight:500;font-size:clamp(30px,5vw,42px);color:var(--text);letter-spacing:-0.02em;margin:0;}
+  .hero-sub{font-size:14px;color:var(--text-dim);line-height:1.6;margin-top:4px;}
+  .auth-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px;position:relative;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.4);}
+  .auth-card::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg, transparent, var(--signal), transparent);opacity:0.6;}
+  .form-group{margin-bottom:22px;}
+  .field-label{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px;display:block;}
+  input[type="text"], input[type="email"]{width:100%;background:var(--panel-alt);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:14px;padding:14px 16px;transition:all .18s ease;}
+  input::placeholder{color:var(--text-faint);}
+  input:focus{outline:none;border-color:var(--signal);box-shadow:0 0 0 3px var(--signal-dim);}
+  .btn-enter{width:100%;font-family:'JetBrains Mono',monospace;font-weight:600;font-size:13px;letter-spacing:0.08em;background:var(--signal);color:#0B0F14;border:none;border-radius:8px;padding:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:transform .12s ease, box-shadow .18s ease, background .18s ease;margin-top:10px;}
+  .btn-enter:hover{box-shadow:0 0 0 4px var(--signal-dim);transform:translateY(-1px);background:#8daaff;}
+  .btn-enter:active{transform:translateY(0);}
+  .footer-note{text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-faint);letter-spacing:0.04em;}
+
+  /* ---------- CONSOLE VIEW ---------- */
+  #view-console { padding: 44px 24px 60px; align-items: center; }
+  .console-stage { width: 100%; max-width: 900px; display: flex; flex-direction: column; gap: 28px; }
+  .console-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:26px;position:relative;overflow:hidden;}
+  .console-card::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg, transparent, var(--signal), transparent);opacity:0.5;}
+  textarea{width:100%;background:var(--panel-alt);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:14px;line-height:1.6;padding:16px;resize:vertical;min-height:110px;transition:border-color .18s ease, box-shadow .18s ease;}
+  textarea::placeholder{color:var(--text-faint);}
+  textarea:focus{outline:none;border-color:var(--signal);box-shadow:0 0 0 3px var(--signal-dim);}
+  .console-footer{display:flex;align-items:center;justify-content:space-between;margin-top:18px;flex-wrap:wrap;gap:12px;}
+  .char-count{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-faint);letter-spacing:0.06em;}
+  .btn-transmit{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:13px;letter-spacing:0.06em;background:var(--signal);color:#0B0F14;border:none;border-radius:8px;padding:12px 22px;cursor:pointer;display:flex;align-items:center;gap:9px;transition:transform .12s ease, box-shadow .18s ease;}
+  .btn-transmit:hover{box-shadow:0 0 0 4px var(--signal-dim);transform:translateY(-1px);}
+  .btn-transmit:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+  .btn-transmit.loading svg{animation:spin 0.8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  
+  .log-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:26px;display:flex;flex-direction:column;}
+  .log-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+  .log-title{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.18em;color:var(--text-dim);text-transform:uppercase;}
+  .log-count{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-faint);border:1px solid var(--border);padding:3px 9px;border-radius:20px;}
+  #historyList{display:flex;flex-direction:column;gap:10px;max-height:520px;overflow-y:auto;padding-right:4px;}
+  #historyList::-webkit-scrollbar{width:6px;}
+  #historyList::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+  .entry{display:flex;gap:14px;align-items:flex-start;background:var(--panel-alt);border:1px solid var(--border-soft);border-radius:8px;padding:14px 16px;}
+  .entry-idx{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--organic);background:var(--organic-dim);border-radius:6px;padding:4px 7px;flex-shrink:0;min-width:38px;text-align:center;}
+  .entry-body{flex:1;min-width:0;}
+  .entry-text{font-size:14px;line-height:1.55;color:var(--text);word-break:break-word;}
+  .entry-meta{display:flex;align-items:center;gap:10px;margin-top:6px;}
+  .entry-time{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-faint);letter-spacing:0.04em;}
+  .empty-state{text-align:center;padding:44px 20px;color:var(--text-faint);font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.04em;}
+  .empty-state .glyph{font-size:22px;margin-bottom:10px;color:var(--text-dim);}
+
+  /* ---------- GRAPH / MAP VIEW ---------- */
+  #view-graph { padding: 36px 32px 60px; align-items: center; }
+  .graph-stage { width:100%; max-width: 1240px; display: flex; flex-direction: column; }
+  .page-head{margin:0 auto 26px;display:flex;flex-direction:column;gap:6px; width: 100%;}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px; width: 100%;}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:20px;display:flex;flex-direction:column;position:relative;overflow:hidden;}
+  .panel::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg, transparent, var(--signal), transparent);opacity:0.4;}
+  .panel-head{display:flex;align-items:baseline;gap:8px;margin-bottom:14px;}
+  .panel-code{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--signal);letter-spacing:0.04em;}
+  .panel-title{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;}
+  .chart-box{flex-grow:1;position:relative;min-height:210px;}
+
+  /* ---------- TRAJECTORY VIEW ---------- */
+  #view-trajectory { padding: 36px 32px 60px; align-items: center; }
+  .traj-stage { width:100%; max-width: 1240px; display: flex; flex-direction: column; }
+  .hero-panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:28px;display:flex;flex-direction:column;position:relative;overflow:hidden;min-height:550px;width:100%; margin-top: 24px;}
+  .hero-panel::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg, transparent, var(--organic), transparent);opacity:0.6;}
+  .hero-panel .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+  .panel-meta{display:flex;align-items:baseline;gap:10px;}
+  .traj-chart-box{flex-grow:1;position:relative;width:100%;height:100%;min-height:440px;}
+
+  .empty-note{margin:60px auto;text-align:center;color:var(--text-faint);font-family:'JetBrains Mono',monospace;font-size:12px;}
+
+  @media (max-width:980px){ .grid{grid-template-columns:repeat(2,1fr);} }
+  @media (max-width:768px){
+    .nav{padding:14px 16px;} .nav-side{min-width:0;} .brand .title{font-size:16px;}
+    #view-console, #view-init {padding:28px 14px 40px;}
+    #view-graph, #view-trajectory {padding:24px 16px 40px;}
+    .console-card,.log-card, .auth-card{padding:18px;}
+    .grid{grid-template-columns:1fr;}
+  }
+</style>
 </head>
 <body>
 
-    <h1 style="text-align: center;">Digital Twin Dashboard</h1>
+<!-- GLOBAL NAVIGATION -->
+<nav class="nav">
+  <div class="nav-side" id="nav-left-group">
+    <!-- These buttons toggle depending on the view -->
+    <button id="btn-nav-graph" class="btn-nav btn-graph">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18.7 8 13 13.7l-3-3L5.3 15.4"/></svg>
+      Signal Map
+    </button>
+    <button id="btn-nav-traj" class="btn-nav btn-trajectory">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      Mental Trajectory
+    </button>
+    <button id="btn-nav-back" class="btn-nav btn-back" style="display:none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+      Back to Console
+    </button>
+  </div>
 
-    <div style="display: flex; justify-content: space-between;">
-        
-        <div style="width: 45%;">
-            <h3>Daily Journal Input</h3>
-            <p>How are you feeling today?</p>
-            
-            <textarea rows="5" style="width: 100%;" placeholder="Describe your days, thoughts and feelings..."></textarea>
-            <br><br>
-            
-            <button>Analyze Behavior</button>
-        </div>
+  <div class="brand">
+    <span class="eyebrow" id="brand-eyebrow">SYSTEM INITIALIZATION</span>
+    <span class="title">Digital Twin Console</span>
+  </div>
 
-        <div style="border-left: 2px solid #ccc; min-height: 200px;"></div>
-
-        <div style="width: 45%;">
-            <h3>Mental State Trajectory</h3>
-            
-        </div>
-        
+  <div class="nav-side right">
+    <button id="btn-clear-data" class="btn-clear" style="display:none;">Clear Data</button>
+    <div class="clock-wrap">
+      <div class="clock-label">LOCAL TIME</div>
+      <div id="live-clock">--:--:--</div>
     </div>
-    
-    <hr>
+  </div>
+</nav>
 
+<main id="app-main">
+
+  <!-- ==================== VIEW 1: INITIALIZE ==================== -->
+  <div id="view-init" class="view-container">
+    <div class="init-stage">
+      <div class="hero-line">
+        <span class="hero-eyebrow">Authentication Protocol</span>
+        <h1 class="hero-title">Establish Your Twin Link</h1>
+        <p class="hero-sub">Enter your identity credentials to calibrate your personal cognitive session and telemetry log.</p>
+      </div>
+      <div class="auth-card">
+        <form id="initForm">
+          <div class="form-group">
+            <label class="field-label" for="userName">Operator Identity (Name)</label>
+            <input type="text" id="userName" placeholder="e.g., Alex Vance" required autocomplete="name">
+          </div>
+          <div class="form-group">
+            <label class="field-label" for="userEmail">Signal Relay (Email ID)</label>
+            <input type="email" id="userEmail" placeholder="alex@twin-network.io" required autocomplete="email">
+          </div>
+          <button type="submit" class="btn-enter">
+            <span>Initialize Session</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </button>
+        </form>
+      </div>
+      <div class="footer-note">◈ Encrypted Session Storage · Private Local Twin Instance</div>
+    </div>
+  </div>
+
+  <!-- ==================== VIEW 2: CONSOLE ==================== -->
+  <div id="view-console" class="view-container">
+    <div class="console-stage">
+      <div class="hero-line" style="text-align: left;">
+        <h1 class="hero-title">What's echoing through your mind right now?</h1>
+      </div>
+      <div class="console-card">
+        <label class="field-label" for="cognitiveInput">State Input</label>
+        <textarea id="cognitiveInput" rows="4" placeholder="Record your current cognitive state — a thought, a feeling, a fragment. Your twin is listening."></textarea>
+        <div class="console-footer">
+          <span class="char-count" id="charCount">0 characters</span>
+          <button id="sendBtn" type="button" class="btn-transmit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7Z"/></svg>
+            <span id="btnLabel">Transmit Signal</span>
+          </button>
+        </div>
+      </div>
+      <div class="log-card">
+        <div class="log-header">
+          <span class="log-title">Transmission Log</span>
+          <span class="log-count" id="entryCount">0 entries</span>
+        </div>
+        <ol id="historyList" style="list-style:none;margin:0;padding:0;">
+          <li class="empty-state" id="placeholder">
+            <div class="glyph">◈</div>
+            No signal tracked yet.<br>Type above and transmit to begin the log.
+          </li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== VIEW 3: SIGNAL MAP ==================== -->
+  <div id="view-graph" class="view-container">
+    <div class="graph-stage">
+      <div class="page-head">
+        <span class="hero-eyebrow" id="graphTag" style="color:var(--signal);">Derived Metrics · 6 Channels</span>
+        <h1 class="hero-title">Everything your signal has traced so far</h1>
+      </div>
+      <div class="grid" id="chartGrid">
+        <div class="panel"><div class="panel-head"><span class="panel-code">SIG-01</span><span class="panel-title">Primary Score Metric</span></div><div class="chart-box"><canvas id="myChart1"></canvas></div></div>
+        <div class="panel"><div class="panel-head"><span class="panel-code">SIG-02</span><span class="panel-title">Text Volume Tracking</span></div><div class="chart-box"><canvas id="myChart2"></canvas></div></div>
+        <div class="panel"><div class="panel-head"><span class="panel-code">SIG-03</span><span class="panel-title">Entry Score Distribution</span></div><div class="chart-box"><canvas id="myChart3"></canvas></div></div>
+        <div class="panel"><div class="panel-head"><span class="panel-code">SIG-04</span><span class="panel-title">Cumulative Metric Sum</span></div><div class="chart-box"><canvas id="myChart4"></canvas></div></div>
+        <div class="panel"><div class="panel-head"><span class="panel-code">SIG-05</span><span class="panel-title">Rate Of Change</span></div><div class="chart-box"><canvas id="myChart5"></canvas></div></div>
+        <div class="panel"><div class="panel-head"><span class="panel-code">SIG-06</span><span class="panel-title">Entry Performance Radar</span></div><div class="chart-box"><canvas id="myChart6"></canvas></div></div>
+      </div>
+      <div class="empty-note" id="graphEmptyNote" style="display:none;">
+        ◈ No signal data yet. Head back to the console and transmit an entry to populate these channels.
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== VIEW 4: TRAJECTORY ==================== -->
+  <div id="view-trajectory" class="view-container">
+    <div class="traj-stage">
+      <div class="page-head">
+        <span class="hero-eyebrow" id="trajTag" style="color:var(--organic);">Mental State Analytics</span>
+        <h1 class="hero-title">Longitudinal mental health trajectory and cognitive baseline</h1>
+      </div>
+      <div class="hero-panel" id="trajPanel">
+        <div class="panel-head">
+          <div class="panel-meta">
+            <span class="panel-code" style="color:var(--organic);font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.06em;">MNT-TRAJECTORY</span>
+            <span class="panel-title" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-dim);letter-spacing:0.12em;text-transform:uppercase;">Primary Affective Score & Mental Valence Profile</span>
+          </div>
+        </div>
+        <div class="traj-chart-box">
+          <canvas id="mentalTrajectoryChart"></canvas>
+        </div>
+      </div>
+      <div class="empty-note" id="trajEmptyNote" style="display:none;">
+        ◈ No trajectory data logged yet. Return to the console and transmit a signal to build your mental map.
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  // ---------- GLOBAL STATE & ROUTING ----------
+  const views = ['view-init', 'view-console', 'view-graph', 'view-trajectory'];
+  let currentProfile = JSON.parse(localStorage.getItem('twinProfile'));
+  let chartInstances = {}; // Store charts to destroy them before re-rendering
+
+  // DOM Elements
+  const btnNavGraph = document.getElementById('btn-nav-graph');
+  const btnNavTraj = document.getElementById('btn-nav-traj');
+  const btnNavBack = document.getElementById('btn-nav-back');
+  const btnClearData = document.getElementById('btn-clear-data');
+  const brandEyebrow = document.getElementById('brand-eyebrow');
+
+  // Chart defaults
+  Chart.defaults.color = '#7C879C';
+  Chart.defaults.font.family = "'JetBrains Mono', monospace";
+  Chart.defaults.font.size = 10;
+  Chart.defaults.borderColor = '#1A222C';
+
+  // Navigation Router
+  function switchView(targetViewId) {
+    views.forEach(v => {
+      document.getElementById(v).classList.remove('active');
+    });
+    document.getElementById(targetViewId).classList.add('active');
+
+    // Update UI based on View
+    if (targetViewId === 'view-init') {
+      btnNavGraph.style.display = 'none';
+      btnNavTraj.style.display = 'none';
+      btnNavBack.style.display = 'none';
+      btnClearData.style.display = 'none';
+      brandEyebrow.textContent = 'SYSTEM INITIALIZATION';
+    } 
+    else if (targetViewId === 'view-console') {
+      btnNavGraph.style.display = 'flex';
+      btnNavTraj.style.display = 'flex';
+      btnNavBack.style.display = 'none';
+      btnClearData.style.display = 'none';
+      brandEyebrow.textContent = 'SYSTEM ACTIVE';
+      updateHistoryUI(); // Refresh log
+    } 
+    else if (targetViewId === 'view-graph') {
+      btnNavGraph.style.display = 'none';
+      btnNavTraj.style.display = 'none';
+      btnNavBack.style.display = 'flex';
+      btnClearData.style.display = 'block';
+      brandEyebrow.textContent = 'SIGNAL ANALYSIS';
+      if(currentProfile) document.getElementById('graphTag').textContent = `${currentProfile.name.toUpperCase()} · DERIVED METRICS`;
+      renderGraphView();
+    } 
+    else if (targetViewId === 'view-trajectory') {
+      btnNavGraph.style.display = 'none';
+      btnNavTraj.style.display = 'none';
+      btnNavBack.style.display = 'flex';
+      btnClearData.style.display = 'block';
+      brandEyebrow.textContent = 'COGNITIVE ANALYSIS';
+      if(currentProfile) document.getElementById('trajTag').textContent = `${currentProfile.name.toUpperCase()} · MENTAL TRAJECTORY`;
+      renderTrajectoryView();
+    }
+  }
+
+  // Event Listeners for Nav
+  btnNavGraph.addEventListener('click', () => switchView('view-graph'));
+  btnNavTraj.addEventListener('click', () => switchView('view-trajectory'));
+  btnNavBack.addEventListener('click', () => switchView('view-console'));
+  
+  // Clear Data Logic
+  btnClearData.addEventListener('click', () => {
+    if (confirm('Are you sure you want to clear all graph records?')){
+      localStorage.removeItem('graphEntries');
+      localStorage.removeItem('textHistory');
+      textHistory = [];
+      graphEntries = [];
+      switchView('view-console'); // Kick back to console to show empty state
+    }
+  });
+
+  // Start App
+  if (currentProfile && currentProfile.name) {
+    switchView('view-console');
+  } else {
+    switchView('view-init');
+  }
+
+  // ---------- CLOCK ----------
+  function updateClock(){
+    const a = new Date();
+    document.getElementById('live-clock').textContent = a.toLocaleDateString() + '  ·  ' + 
+      a.getHours().toString().padStart(2,'0') + ':' +
+      a.getMinutes().toString().padStart(2,'0') + ':' +
+      a.getSeconds().toString().padStart(2,'0');
+  }
+  updateClock(); setInterval(updateClock, 1000);
+
+  // ---------- INIT FORM LOGIC ----------
+  document.getElementById('initForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const nameVal = document.getElementById('userName').value.trim();
+    const emailVal = document.getElementById('userEmail').value.trim();
+    if (nameVal && emailVal) {
+      currentProfile = { name: nameVal, email: emailVal, connectedAt: new Date().toISOString() };
+      localStorage.setItem('twinProfile', JSON.stringify(currentProfile));
+      switchView('view-console');
+    }
+  });
+
+  // ---------- CONSOLE LOGIC ----------
+  const cognitiveInput = document.getElementById('cognitiveInput');
+  const charCount = document.getElementById('charCount');
+  const sendBtn = document.getElementById('sendBtn');
+  
+  let textHistory = JSON.parse(localStorage.getItem('textHistory')) || [];
+  let graphEntries = JSON.parse(localStorage.getItem('graphEntries')) || [];
+  textHistory = textHistory.map(item => typeof item === 'string' ? { text: item, time: null } : item);
+
+  cognitiveInput.addEventListener('input', () => {
+    charCount.textContent = cognitiveInput.value.length + ' characters';
+  });
+
+  function updateHistoryUI(){
+    const hl = document.getElementById('historyList');
+    const ec = document.getElementById('entryCount');
+    ec.textContent = textHistory.length + (textHistory.length === 1 ? ' entry' : ' entries');
+    if (textHistory.length === 0){
+      hl.innerHTML = `<li class="empty-state"><div class="glyph">◈</div>No signal tracked yet.<br>Type above and transmit to begin the log.</li>`;
+      return;
+    }
+    hl.innerHTML = '';
+    for (let i = textHistory.length - 1; i >= 0; i--){
+      const { text, time } = textHistory[i];
+      const li = document.createElement('li');
+      li.className = 'entry';
+      const timeStr = time ? new Date(time).toLocaleTimeString() : '—';
+      li.innerHTML = `
+        <span class="entry-idx">#${(i + 1).toString().padStart(2,'0')}</span>
+        <div class="entry-body">
+          <div class="entry-text"></div>
+          <div class="entry-meta"><span class="entry-time">${timeStr}</span></div>
+        </div>`;
+      li.querySelector('.entry-text').textContent = text;
+      hl.appendChild(li);
+    }
+  }
+
+  sendBtn.addEventListener('click', async () => {
+    const userText = cognitiveInput.value.trim();
+    if (userText === '') return;
+
+    sendBtn.disabled = true; sendBtn.classList.add('loading');
+    document.getElementById('btnLabel').textContent = 'Transmitting…';
+
+    try {
+      const response = await fetch('http://localhost:5000/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ operator: currentProfile?.email || 'anonymous', analyzedText: userText, timestamp: new Date().toISOString() })
+      });
+      let params = { valence: 50 }; // Default
+      if (response.ok){
+        const serverReceipt = await response.json();
+        if (serverReceipt.params) params = serverReceipt.params;
+      }
+      saveEntry(userText, params.valence || Math.min(100, userText.length * 2));
+    } catch (error){
+      // Fallback
+      saveEntry(userText, Math.min(100, userText.length * 2));
+    } finally {
+      sendBtn.disabled = false; sendBtn.classList.remove('loading');
+      document.getElementById('btnLabel').textContent = 'Transmit Signal';
+    }
+  });
+
+  function saveEntry(text, valValue) {
+    const nowIso = new Date().toISOString();
+    const entryNumber = graphEntries.length + 1;
+    graphEntries.push({ label: `Entry ${entryNumber}`, value: valValue, time: nowIso });
+    textHistory.push({ text: text, time: nowIso });
+    localStorage.setItem('graphEntries', JSON.stringify(graphEntries));
+    localStorage.setItem('textHistory', JSON.stringify(textHistory));
+    updateHistoryUI();
+    cognitiveInput.value = ''; charCount.textContent = '0 characters';
+  }
+
+  // ---------- CHART RENDERING UTILITIES ----------
+  const PALETTE = {
+    signal:  { line:'#7C9EFF', fill:'rgba(124,158,255,0.16)' },
+    organic: { line:'#F2A65A', fill:'rgba(242,166,90,0.16)' },
+    amber:   { line:'#FFD166', fill:'rgba(255,209,102,0.16)' },
+    violet:  { line:'#B892FF', fill:'rgba(184,146,255,0.16)' },
+    coral:   { line:'#FF6B6B', fill:'rgba(255,107,107,0.16)' },
+    teal:    { line:'#64D9C7', fill:'rgba(100,217,199,0.16)' },
+  };
+
+  function destroyChart(id) {
+    if(chartInstances[id]) { chartInstances[id].destroy(); }
+  }
+
+  function getChartData() {
+    const entries = JSON.parse(localStorage.getItem('graphEntries')) || [];
+    return { x: entries.map(e => e.label), y: entries.map(e => e.value) };
+  }
+
+  // ---------- SIGNAL MAP VIEW ----------
+  function createChartConfig(type, label, xLabels, data, palette, fill = false){
+    return {
+      type,
+      data: {
+        labels: xLabels,
+        datasets:[{
+          label, data,
+          borderColor: palette.line,
+          backgroundColor: type === 'radar' ? palette.fill : (fill ? palette.fill : palette.line),
+          pointBackgroundColor: palette.line, pointBorderColor: palette.line,
+          pointRadius: 3, borderWidth: 2, fill, tension: 0.35,
+          borderRadius: type === 'bar' ? 4 : 0,
+        }]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } },
+        scales: type !== 'radar' ? {
+          x:{ grid:{ color:'#1A222C' }, ticks:{ color:'#4E5868' } },
+          y:{ beginAtZero:true, grid:{ color:'#1A222C' }, ticks:{ color:'#4E5868' } }
+        } : { r:{ angleLines:{ color:'#1A222C' }, grid:{ color:'#1A222C' }, pointLabels:{ color:'#7C879C' }, ticks:{ display:false, backdropColor:'transparent' } } }
+      }
+    };
+  }
+
+  function renderGraphView() {
+    const { x, y } = getChartData();
+    if(x.length === 0) {
+      document.getElementById('chartGrid').style.display = 'none';
+      document.getElementById('graphEmptyNote').style.display = 'block';
+      return;
+    }
+    document.getElementById('chartGrid').style.display = 'grid';
+    document.getElementById('graphEmptyNote').style.display = 'none';
+
+    const cumSum = y.reduce((acc, val, i) => [...acc, (acc[i-1] || 0) + val], []);
+    const rateOfChange = y.map((val, i) => i === 0 ? 0 : val - y[i-1]);
+
+    const charts = [
+      { id: 'myChart1', config: createChartConfig('line', 'Score', x, y, PALETTE.signal, true) },
+      { id: 'myChart2', config: createChartConfig('line', 'Volume', x, y, PALETTE.organic) },
+      { id: 'myChart3', config: createChartConfig('bar', 'Distribution', x, y, PALETTE.amber) },
+      { id: 'myChart4', config: createChartConfig('line', 'Cumulative', x, cumSum, PALETTE.violet, true) },
+      { id: 'myChart5', config: createChartConfig('bar', 'Delta', x, rateOfChange, PALETTE.coral) },
+      { id: 'myChart6', config: createChartConfig('radar', 'Profile', x, y, PALETTE.teal, true) }
+    ];
+
+    charts.forEach(c => {
+      destroyChart(c.id);
+      chartInstances[c.id] = new Chart(document.getElementById(c.id), c.config);
+    });
+  }
+
+  // ---------- TRAJECTORY VIEW ----------
+  function renderTrajectoryView() {
+    const { x, y } = getChartData();
+    if(x.length === 0) {
+      document.getElementById('trajPanel').style.display = 'none';
+      document.getElementById('trajEmptyNote').style.display = 'block';
+      return;
+    }
+    document.getElementById('trajPanel').style.display = 'flex';
+    document.getElementById('trajEmptyNote').style.display = 'none';
+
+    destroyChart('mentalTrajectoryChart');
+    const ctx = document.getElementById('mentalTrajectoryChart').getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, 'rgba(242, 166, 90, 0.28)');
+    gradient.addColorStop(1, 'rgba(242, 166, 90, 0.01)');
+
+    chartInstances['mentalTrajectoryChart'] = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: x,
+        datasets: [{
+          label: 'Mental Health Trajectory Value', data: y,
+          borderColor: '#F2A65A', backgroundColor: gradient,
+          pointBackgroundColor: '#F2A65A', pointBorderColor: '#0B0F14',
+          pointHoverBackgroundColor: '#FFFFFF', pointHoverBorderColor: '#F2A65A',
+          pointRadius: 5, pointHoverRadius: 7, borderWidth: 3, fill: true, tension: 0.38
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true, position: 'top', align: 'end', labels: { boxWidth: 12, usePointStyle: true, pointStyle: 'circle', color: '#E8EBF0', font: { size: 12 } } },
+          tooltip: { backgroundColor: '#10151C', borderColor: '#232C38', borderWidth: 1, titleColor: '#F2A65A', bodyColor: '#E8EBF0', padding: 12, displayColors: false }
+        },
+        scales: {
+          x: { grid: { color: '#1A222C' }, ticks: { color: '#7C879C' }, title: { display: true, text: 'TRANSMISSION TIMELINE (ENTRIES)', color: '#4E5868', font: { size: 10 } } },
+          y: { beginAtZero: true, grid: { color: '#1A222C' }, ticks: { color: '#7C879C' }, title: { display: true, text: 'COGNITIVE VALENCE SCORE', color: '#4E5868', font: { size: 10 } } }
+        }
+      }
+    });
+  }
+</script>
 </body>
 </html>
