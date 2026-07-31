@@ -91,7 +91,7 @@ class AssessmentEngine:
         # -------------------------------
         #
 
-        if version.lower() == "v1":
+        if trigger_output.assessment_version == "v1":
 
             attention_output = self.v1_filter.filter(
 
@@ -115,7 +115,7 @@ class AssessmentEngine:
         # -------------------------------
         #
 
-        if version.lower() == "v2":
+        if trigger_output.assessment_version == "v2":
 
             attention_output = self.m2_attention.generate(
 
@@ -137,7 +137,8 @@ class AssessmentEngine:
 
         raise ValueError(
 
-            f"Unknown assessment version: {version}"
+            f"Unknown assessment version returned by Trigger Policy: "
+            f"{trigger_output.assessment_version}"
 
         )
 

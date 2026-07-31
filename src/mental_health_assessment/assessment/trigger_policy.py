@@ -3,29 +3,16 @@ trigger_policy.py
 
 Determines whether a V1 or V2 behavioural assessment should be generated.
 
-The policy is based on:
-
-V1 period
----------
+Simplified policy
+-----------------
 • Entries 1–19:
-    No assessment.
+    No assessment because the baseline period is incomplete.
 
-• Entry 20:
-    Forced V1 assessment.
+• Entries 20–26:
+    Always generate a V1 assessment after each new entry.
 
-• Entries 21–26:
-    V1 assessment only when requested by the user.
-
-V2 period
----------
 • Entry 27 onward:
-    V1 ends permanently and V2 becomes active.
-
-• A user-requested V2 assessment is always generated.
-
-• An automatic V2 assessment is generated when:
-    - at least one anomaly has High severity, or
-    - at least two anomalies have Moderate severity.
+    Always generate a V2 assessment after each new entry.
 
 This module only decides whether an assessment should run.
 It performs no behavioural interpretation.
@@ -41,11 +28,8 @@ from .assessment_context import AssessmentContext
 # CONFIGURATION
 # ==========================================================
 
-V1_FORCED_ENTRY = 20
+V1_START_ENTRY = 20
 V2_START_ENTRY = 27
-
-HIGH_SEVERITY_REQUIRED = 1
-MODERATE_SEVERITY_REQUIRED = 2
 
 
 # ==========================================================
@@ -79,7 +63,7 @@ class TriggerDecision:
 
 class TriggerPolicy:
     """
-    Applies the deterministic V1 and V2 triggering rules.
+    Applies the simplified automatic V1 and V2 triggering rules.
     """
 
     def evaluate(
@@ -89,66 +73,45 @@ class TriggerPolicy:
         """
         Decide whether an assessment should be generated.
 
-        Parameters
-        ----------
-        context:
-            AssessmentContext containing journal entries,
-            anomaly outputs and the user-request flag.
+        Rules
+        -----
+        Entries 1–19:
+            Do not generate an assessment.
 
-        Returns
-        -------
-        TriggerDecision
-            The assessment version, trigger type and reason.
+        Entries 20–26:
+            Always generate V1.
+
+        Entry 27 onward:
+            Always generate V2.
         """
 
         entry_count = len(context.journal_entries)
 
         # --------------------------------------------------
-        # BEFORE V1
+        # BASELINE PERIOD
         # Entries 1–19
         # --------------------------------------------------
 
-        if entry_count < V1_FORCED_ENTRY:
+        if entry_count < V1_START_ENTRY:
             return TriggerDecision(
                 should_generate=False,
+                assessment_version=None,
+                assessment_type=None,
                 trigger_reason="baseline_period_incomplete",
                 entry_count=entry_count
             )
 
         # --------------------------------------------------
-        # ENTRY 20
-        # Forced first V1 assessment
+        # V1 PERIOD
+        # Entries 20–26
         # --------------------------------------------------
 
-        if entry_count == V1_FORCED_ENTRY:
+        if entry_count < V2_START_ENTRY:
             return TriggerDecision(
                 should_generate=True,
                 assessment_version="v1",
                 assessment_type="automatic",
-                trigger_reason="forced_initial_v1_assessment",
-                entry_count=entry_count
-            )
-
-        # --------------------------------------------------
-        # V1 USER-REQUEST PERIOD
-        # Entries 21–26
-        # --------------------------------------------------
-
-        if V1_FORCED_ENTRY < entry_count < V2_START_ENTRY:
-
-            if context.user_requested:
-                return TriggerDecision(
-                    should_generate=True,
-                    assessment_version="v1",
-                    assessment_type="user_requested",
-                    trigger_reason="v1_manual_request",
-                    entry_count=entry_count
-                )
-
-            return TriggerDecision(
-                should_generate=False,
-                assessment_version="v1",
-                trigger_reason="v1_waiting_for_user_request",
+                trigger_reason="automatic_v1_after_entry",
                 entry_count=entry_count
             )
 
@@ -157,53 +120,15 @@ class TriggerPolicy:
         # Entry 27 onward
         # --------------------------------------------------
 
-        # User requests always produce a V2 assessment.
-        if context.user_requested:
-            high_count, moderate_count = (
-                self._count_relevant_anomaly_severities(context)
-            )
-
-            return TriggerDecision(
-                should_generate=True,
-                assessment_version="v2",
-                assessment_type="user_requested",
-                trigger_reason="v2_manual_request",
-                entry_count=entry_count,
-                high_anomaly_count=high_count,
-                moderate_anomaly_count=moderate_count
-            )
-
-        # Automatic V2 triggering depends on anomaly severity.
         high_count, moderate_count = (
             self._count_relevant_anomaly_severities(context)
         )
 
-        if high_count >= HIGH_SEVERITY_REQUIRED:
-            return TriggerDecision(
-                should_generate=True,
-                assessment_version="v2",
-                assessment_type="automatic",
-                trigger_reason="high_severity_anomaly_detected",
-                entry_count=entry_count,
-                high_anomaly_count=high_count,
-                moderate_anomaly_count=moderate_count
-            )
-
-        if moderate_count >= MODERATE_SEVERITY_REQUIRED:
-            return TriggerDecision(
-                should_generate=True,
-                assessment_version="v2",
-                assessment_type="automatic",
-                trigger_reason="multiple_moderate_anomalies_detected",
-                entry_count=entry_count,
-                high_anomaly_count=high_count,
-                moderate_anomaly_count=moderate_count
-            )
-
         return TriggerDecision(
-            should_generate=False,
+            should_generate=True,
             assessment_version="v2",
-            trigger_reason="v2_automatic_conditions_not_met",
+            assessment_type="automatic",
+            trigger_reason="automatic_v2_after_entry",
             entry_count=entry_count,
             high_anomaly_count=high_count,
             moderate_anomaly_count=moderate_count
@@ -220,9 +145,8 @@ class TriggerPolicy:
         """
         Count High and Moderate anomaly results.
 
-        Only the anomaly fields stored in each ParameterContext are
-        examined. Behavioural recommendations from the anomaly module
-        are ignored.
+        These counts are no longer used to decide whether V2 runs.
+        They are retained only as useful context for the assessment model.
         """
 
         high_count = 0
