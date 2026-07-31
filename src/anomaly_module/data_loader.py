@@ -24,7 +24,6 @@ def get_user_entry_count(user_id, parameter_name=None):
     cursor.execute(query, (user_id,))
     count = cursor.fetchone()[0]
     
-    conn.close()
     return count
 
 def load_anomaly_inputs(user_id):
@@ -40,7 +39,6 @@ def load_anomaly_inputs(user_id):
     latest_entry = cursor.fetchone()
 
     if not latest_entry:
-        conn.close()
         raise ValueError(f"No journal entries found for user_id: {user_id}")
 
 
@@ -50,7 +48,6 @@ def load_anomaly_inputs(user_id):
         WHERE user_id = ?
     ''', (user_id,))
     baselines_data = cursor.fetchall()
-    conn.close()
 
     # Convert baselines into a quick lookup dictionary
     
@@ -117,6 +114,24 @@ def update_sliding_window(user_id, param_name, updated_window):
         REPLACE INTO SlidingWindows (user_id, parameter_name, window_data, last_updated)
         VALUES (?, ?, ?, CURRENT_TIMESTAMP)
     ''', (user_id, param_name, window_string))
+    
+    conn.commit()
+
+def save_anomaly_flags(user_id, flags_dict):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Convert the Python dictionary into a JSON string
+    flags_json = json.dumps(flags_dict)
+    
+    # Update the anomaly_flags column for the user's latest entry
+    cursor.execute('''
+        UPDATE Entries 
+        SET anomaly_flags = ? 
+        WHERE user_id = ? AND timestamp = (
+            SELECT MAX(timestamp) FROM Entries WHERE user_id = ?
+        )
+    ''', (flags_json, user_id, user_id))
     
     conn.commit()
     conn.close()
