@@ -1,5 +1,5 @@
 import sys
-sys.path.insert(0, r'C:\Users\ritvi\Documents\mental_health_twin\Mental-Health-Digital-Twin')
+sys.path.insert(0, r'C:\Users\ritvi\Documents\mental_health_twin\Mental-Health-Digital-Twin\src')
 
 from data_module import create_database, add_user, add_entry, get_baseline, get_all_baselines
 
@@ -51,3 +51,24 @@ print("Entry 2 (3 days ago): stress = 5  → MEDIUM weight")
 print("Entry 3 (today):      stress = 2  → HIGH weight (recent)")
 print(f"Exponential decay weighted average → stress baseline = {round(all_baselines['stress'], 2)}")
 print("\nRecent improvement is reflected more than the bad week!")
+
+print("\n--- ENTRY 4: FLAGGING STRESS AS 'ADAPT' (this affects ENTRY 5's weight, not this entry's) ---\n")
+add_entry(user_id=user_id, journal_text="Stress spiked again, feels different this time.",
+    sentiment_score=-0.2, stress=8, anxiety=6, sadness=5, frustration=6,
+    emotional_exhaustion=7, optimism=4, motivation=4, task_engagement=4,
+    social_connectedness=5, social_support=5, self_efficacy=4, coping_ability=4,
+    resilience=5, concentration=4, mental_fatigue=6, rumination=6,
+    self_talk_score=4, sleep_quality=5, physical_fatigue=6,
+    anomaly_flags={"stress": "adapt"})
+
+print("\n--- ENTRY 5: THIS entry's weight should be boosted 3x, because ENTRY 4 was flagged 'adapt' ---\n")
+add_entry(user_id=user_id, journal_text="Still feeling the effects, stress remains high.",
+    sentiment_score=-0.3, stress=8, anxiety=6, sadness=5, frustration=6,
+    emotional_exhaustion=7, optimism=4, motivation=4, task_engagement=4,
+    social_connectedness=5, social_support=5, self_efficacy=4, coping_ability=4,
+    resilience=5, concentration=4, mental_fatigue=6, rumination=6,
+    self_talk_score=4, sleep_quality=5, physical_fatigue=6)
+
+all_baselines = get_all_baselines(user_id)
+print(f"Stress baseline after Entry 5 (boosted by Entry 4's 'adapt' flag): {round(all_baselines['stress'], 2)}")
+print("This should be pulled noticeably closer to 8 than it would without the adapt boost.")

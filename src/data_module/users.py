@@ -1,11 +1,12 @@
+import os
 import sqlite3
 from datetime import datetime
 
 def add_user(username, email):
-    conn = sqlite3.connect('mental_health.db')
+    DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mental_health.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
-    
     cursor.execute('SELECT user_id FROM Users WHERE email = ?', (email,))
     existing_user = cursor.fetchone()
 
@@ -14,7 +15,6 @@ def add_user(username, email):
         conn.close()
         return existing_user[0]
 
-    
     cursor.execute('''
         INSERT INTO Users (username, email, created_at)
         VALUES (?, ?, ?)

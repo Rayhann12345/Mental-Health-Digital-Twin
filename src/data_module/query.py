@@ -1,7 +1,9 @@
+import os
 import sqlite3
 
 def get_baseline(user_id, parameter_name):
-    conn = sqlite3.connect('mental_health.db')
+    DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mental_health.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
     cursor.execute('''
@@ -19,7 +21,8 @@ def get_baseline(user_id, parameter_name):
         return None
 
 def get_all_baselines(user_id):
-    conn = sqlite3.connect('mental_health.db')
+    DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mental_health.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
     cursor.execute('''

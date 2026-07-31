@@ -12,6 +12,21 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+def get_user_entry_count(user_id, parameter_name=None):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    if parameter_name:
+        query = f'SELECT COUNT({parameter_name}) FROM Entries WHERE user_id = ?'
+    else:
+        query = 'SELECT COUNT(*) FROM Entries WHERE user_id = ?'
+        
+    cursor.execute(query, (user_id,))
+    count = cursor.fetchone()[0]
+    
+    conn.close()
+    return count
+
 def load_anomaly_inputs(user_id):
 
     conn = get_db_connection()
@@ -27,17 +42,6 @@ def load_anomaly_inputs(user_id):
     if not latest_entry:
         conn.close()
         raise ValueError(f"No journal entries found for user_id: {user_id}")
-
-    cursor.execute('''
-        SELECT window_data FROM SlidingWindows 
-        WHERE user_id = ? AND parameter_name = ?
-    ''', (user_id, param_name))
-    result = cursor.fetchone()
-
-    if result:
-        historical_window = json.loads(result['window_data']) 
-    else:
-        historical_window = []
 
 
     cursor.execute('''
@@ -79,6 +83,17 @@ def load_anomaly_inputs(user_id):
             std_dev = baseline_lookup[key]['std_dev']
             
             max_window_length = 14 if param_name in long_window_params else 7
+
+            cursor.execute('''
+                SELECT window_data FROM SlidingWindows 
+                WHERE user_id = ? AND parameter_name = ?
+            ''', (user_id, param_name))
+            result = cursor.fetchone()
+            
+            if result:
+                historical_window = json.loads(result['window_data']) 
+            else:
+                historical_window = []
             
             evaluation_inputs.append({
                 "param_name": param_name,
