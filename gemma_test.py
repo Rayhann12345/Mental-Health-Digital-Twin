@@ -1,6 +1,6 @@
 import requests
 
-API_KEY = "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"
+API_KEY = "sk-or-v1-secret_key"
 
 PROMPT_PATH = "src/mental_health_assessment/v2/prompt.md"
 MODEL = "nvidia/nemotron-3-super-120b-a12b:free"
