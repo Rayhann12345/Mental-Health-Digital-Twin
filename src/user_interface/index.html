@@ -40,7 +40,7 @@
   }
   a{color:inherit;text-decoration:none;}
 
-  /* ---------- NAV ---------- */
+ 
   .nav{
     display:flex;align-items:center;justify-content:space-between;
     padding:18px 32px;
@@ -80,14 +80,14 @@
   .clock-label{font-size:9px;letter-spacing:0.24em;color:var(--text-faint);margin-bottom:2px;}
   #live-clock{font-size:14px;color:var(--text-dim);letter-spacing:0.03em;}
 
-  /* ---------- VIEW SYSTEM ---------- */
+  
   .view-container { display: none; width: 100%; flex: 1; animation: fadeIn 0.4s ease; }
   .view-container.active { display: flex; flex-direction: column; }
   @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
 
   main { flex: 1; display: flex; flex-direction: column; align-items: center; }
 
-  /* ---------- INITIALIZE VIEW ---------- */
+  
   #view-init { padding: 60px 24px; align-items: center; justify-content: center; }
   .init-stage { width: 100%; max-width: 520px; display: flex; flex-direction: column; gap: 32px; }
   .hero-line{text-align:center;display:flex;flex-direction:column;gap:8px;}
@@ -106,7 +106,7 @@
   .btn-enter:active{transform:translateY(0);}
   .footer-note{text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-faint);letter-spacing:0.04em;}
 
-  /* ---------- CONSOLE VIEW ---------- */
+ 
   #view-console { padding: 44px 24px 60px; align-items: center; }
   .console-stage { width: 100%; max-width: 900px; display: flex; flex-direction: column; gap: 28px; }
   .console-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:26px;position:relative;overflow:hidden;}
@@ -138,7 +138,7 @@
   .empty-state{text-align:center;padding:44px 20px;color:var(--text-faint);font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.04em;}
   .empty-state .glyph{font-size:22px;margin-bottom:10px;color:var(--text-dim);}
 
-  /* ---------- GRAPH / MAP VIEW ---------- */
+  
   #view-graph { padding: 36px 32px 60px; align-items: center; }
   .graph-stage { width:100%; max-width: 1240px; display: flex; flex-direction: column; }
   .page-head{margin:0 auto 26px;display:flex;flex-direction:column;gap:6px; width: 100%;}
@@ -150,7 +150,7 @@
   .panel-title{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;}
   .chart-box{flex-grow:1;position:relative;min-height:210px;}
 
-  /* ---------- TRAJECTORY VIEW ---------- */
+  
   #view-trajectory { padding: 36px 32px 60px; align-items: center; }
   .traj-stage { width:100%; max-width: 1240px; display: flex; flex-direction: column; }
   .hero-panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:28px;display:flex;flex-direction:column;position:relative;overflow:hidden;min-height:550px;width:100%; margin-top: 24px;}
@@ -173,10 +173,10 @@
 </head>
 <body>
 
-<!-- GLOBAL NAVIGATION -->
+
 <nav class="nav">
   <div class="nav-side" id="nav-left-group">
-    <!-- These buttons toggle depending on the view -->
+    
     <button id="btn-nav-graph" class="btn-nav btn-graph">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18.7 8 13 13.7l-3-3L5.3 15.4"/></svg>
       Signal Map
@@ -207,7 +207,7 @@
 
 <main id="app-main">
 
-  <!-- ==================== VIEW 1: INITIALIZE ==================== -->
+  
   <div id="view-init" class="view-container">
     <div class="init-stage">
       <div class="hero-line">
@@ -235,7 +235,7 @@
     </div>
   </div>
 
-  <!-- ==================== VIEW 2: CONSOLE ==================== -->
+  
   <div id="view-console" class="view-container">
     <div class="console-stage">
       <div class="hero-line" style="text-align: left;">
@@ -267,7 +267,7 @@
     </div>
   </div>
 
-  <!-- ==================== VIEW 3: SIGNAL MAP ==================== -->
+  
   <div id="view-graph" class="view-container">
     <div class="graph-stage">
       <div class="page-head">
@@ -288,7 +288,7 @@
     </div>
   </div>
 
-  <!-- ==================== VIEW 4: TRAJECTORY ==================== -->
+  
   <div id="view-trajectory" class="view-container">
     <div class="traj-stage">
       <div class="page-head">
@@ -315,32 +315,32 @@
 </main>
 
 <script>
-  // ---------- GLOBAL STATE & ROUTING ----------
+  
   const views = ['view-init', 'view-console', 'view-graph', 'view-trajectory'];
   let currentProfile = JSON.parse(localStorage.getItem('twinProfile'));
-  let chartInstances = {}; // Store charts to destroy them before re-rendering
+  let chartInstances = {}; 
 
-  // DOM Elements
+  
   const btnNavGraph = document.getElementById('btn-nav-graph');
   const btnNavTraj = document.getElementById('btn-nav-traj');
   const btnNavBack = document.getElementById('btn-nav-back');
   const btnClearData = document.getElementById('btn-clear-data');
   const brandEyebrow = document.getElementById('brand-eyebrow');
 
-  // Chart defaults
+  
   Chart.defaults.color = '#7C879C';
   Chart.defaults.font.family = "'JetBrains Mono', monospace";
   Chart.defaults.font.size = 10;
   Chart.defaults.borderColor = '#1A222C';
 
-  // Navigation Router
+  
   function switchView(targetViewId) {
     views.forEach(v => {
       document.getElementById(v).classList.remove('active');
     });
     document.getElementById(targetViewId).classList.add('active');
 
-    // Update UI based on View
+    
     if (targetViewId === 'view-init') {
       btnNavGraph.style.display = 'none';
       btnNavTraj.style.display = 'none';
@@ -376,30 +376,30 @@
     }
   }
 
-  // Event Listeners for Nav
+  
   btnNavGraph.addEventListener('click', () => switchView('view-graph'));
   btnNavTraj.addEventListener('click', () => switchView('view-trajectory'));
   btnNavBack.addEventListener('click', () => switchView('view-console'));
   
-  // Clear Data Logic
+  
   btnClearData.addEventListener('click', () => {
     if (confirm('Are you sure you want to clear all graph records?')){
       localStorage.removeItem('graphEntries');
       localStorage.removeItem('textHistory');
       textHistory = [];
       graphEntries = [];
-      switchView('view-console'); // Kick back to console to show empty state
+      switchView('view-console'); 
     }
   });
 
-  // Start App
+  
   if (currentProfile && currentProfile.name) {
     switchView('view-console');
   } else {
     switchView('view-init');
   }
 
-  // ---------- CLOCK ----------
+  
   function updateClock(){
     const a = new Date();
     document.getElementById('live-clock').textContent = a.toLocaleDateString() + '  ·  ' + 
@@ -409,7 +409,7 @@
   }
   updateClock(); setInterval(updateClock, 1000);
 
-  // ---------- INIT FORM LOGIC ----------
+ 
   document.getElementById('initForm').addEventListener('submit', (e) => {
     e.preventDefault();
     const nameVal = document.getElementById('userName').value.trim();
@@ -421,7 +421,7 @@
     }
   });
 
-  // ---------- CONSOLE LOGIC ----------
+  
   const cognitiveInput = document.getElementById('cognitiveInput');
   const charCount = document.getElementById('charCount');
   const sendBtn = document.getElementById('sendBtn');
@@ -498,7 +498,7 @@
     cognitiveInput.value = ''; charCount.textContent = '0 characters';
   }
 
-  // ---------- CHART RENDERING UTILITIES ----------
+  
   const PALETTE = {
     signal:  { line:'#7C9EFF', fill:'rgba(124,158,255,0.16)' },
     organic: { line:'#F2A65A', fill:'rgba(242,166,90,0.16)' },
@@ -517,7 +517,7 @@
     return { x: entries.map(e => e.label), y: entries.map(e => e.value) };
   }
 
-  // ---------- SIGNAL MAP VIEW ----------
+  
   function createChartConfig(type, label, xLabels, data, palette, fill = false){
     return {
       type,
@@ -570,7 +570,7 @@
     });
   }
 
-  // ---------- TRAJECTORY VIEW ----------
+  
   function renderTrajectoryView() {
     const { x, y } = getChartData();
     if(x.length === 0) {
