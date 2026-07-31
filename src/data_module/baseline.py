@@ -64,6 +64,7 @@ def calculate_baseline(user_id):
 
         if param in LONG_TERM_PARAMETERS:
             baseline_value = values[-1]
+            std_dev_value = float(np.std(values)) if len(values) > 1 else 0.0
         else:
             mean = np.mean(values)
             std = np.std(values)
@@ -78,7 +79,7 @@ def calculate_baseline(user_id):
             steps_remaining = 0
 
             for j, flags in enumerate(parsed_flags):
-                status = flags.get(param, 'normal').lower()  # <-- case-insensitive fix
+                status = flags.get(param, 'normal').lower()
 
                 if status in ('protect', 'adapt'):
                     active_status = status
@@ -95,11 +96,13 @@ def calculate_baseline(user_id):
                         active_status = None
 
             baseline_value = np.average(values, weights=final_weights)
+            variance = np.average((values - baseline_value) ** 2, weights=final_weights)
+            std_dev_value = float(np.sqrt(variance))
 
         cursor.execute('''
-            INSERT OR REPLACE INTO Baselines (user_id, parameter_name, baseline_value, last_updated)
-            VALUES (?, ?, ?, ?)
-        ''', (user_id, param, baseline_value, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+            INSERT OR REPLACE INTO Baselines (user_id, parameter_name, baseline_value, std_dev, last_updated)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (user_id, param, baseline_value, std_dev_value, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
     conn.commit()
     conn.close()

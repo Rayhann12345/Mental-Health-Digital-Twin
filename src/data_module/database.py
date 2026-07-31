@@ -41,9 +41,16 @@ def create_database():
             self_talk_score REAL,
             sleep_quality REAL,
             physical_fatigue REAL,
+            anomaly_flags TEXT DEFAULT '{}',
             FOREIGN KEY (user_id) REFERENCES Users(user_id)
         )
     ''')
+
+    # Migration: add anomaly_flags column if this DB was created before this change
+    try:
+        cursor.execute("ALTER TABLE Entries ADD COLUMN anomaly_flags TEXT DEFAULT '{}'")
+    except sqlite3.OperationalError:
+        pass
 
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS Baselines (
@@ -51,6 +58,17 @@ def create_database():
             parameter_name TEXT,
             baseline_value REAL,
             std_dev REAL,
+            last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (user_id, parameter_name),
+            FOREIGN KEY (user_id) REFERENCES Users(user_id)
+        )
+    ''')
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS SlidingWindows (
+            user_id INTEGER,
+            parameter_name TEXT,
+            window_data TEXT,
             last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (user_id, parameter_name),
             FOREIGN KEY (user_id) REFERENCES Users(user_id)
