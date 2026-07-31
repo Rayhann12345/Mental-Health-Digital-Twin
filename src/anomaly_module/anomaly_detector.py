@@ -21,7 +21,7 @@ class AnomalyDetector:
         else:
             return '0'
 
-    def evaluate_parameter(self, param_name, current_value, baseline, std_dev, historical_window, max_window_length):
+    def evaluate_parameter(self, param_name, current_value, baseline, std_dev, historical_window, max_window_length, total_days):
 
         new_label = self._get_deviation_label(current_value, baseline, std_dev)
         
@@ -29,7 +29,17 @@ class AnomalyDetector:
         current_window = historical_window + [new_label]
         if len(current_window) > max_window_length:
             current_window = current_window[-max_window_length:]
-            
+
+        if total_days <= 27:
+            risk_output = {
+                "Parameter": param_name,
+                "Direction": "Neutral",
+                "Severity": "Low",
+                "State": "Warming Up"
+            }
+
+            return risk_output, "Normal", current_window
+        
         current_length = len(current_window)
         weights = self._get_weights(current_length)
         total_weight = np.sum(weights)
