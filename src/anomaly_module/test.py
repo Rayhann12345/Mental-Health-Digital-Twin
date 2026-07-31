@@ -16,6 +16,7 @@ if total_days>=21:
             std_dev=data['std_dev'],
             historical_window=data['historical_window'],
             max_window_length=data['max_window_length']
+            total_days=total_days
         )        
     
         update_sliding_window(user_id=1, param_name=data['param_name'], updated_window=finalized_window)
