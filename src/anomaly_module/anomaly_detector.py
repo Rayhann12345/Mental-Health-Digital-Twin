@@ -21,7 +21,7 @@ class AnomalyDetector:
         else:
             return '0'
 
-    def evaluate_parameter(self, param_name, current_value, baseline, std_dev, historical_window, max_window_length):
+    def evaluate_parameter(self, param_name, current_value, baseline, std_dev, historical_window, max_window_length, total_days):
 
         new_label = self._get_deviation_label(current_value, baseline, std_dev)
         
