@@ -320,6 +320,10 @@
   let currentProfile = JSON.parse(localStorage.getItem('twinProfile'));
   let chartInstances = {}; 
 
+  let textHistory = JSON.parse(localStorage.getItem('textHistory')) || [];
+  let graphEntries = JSON.parse(localStorage.getItem('graphEntries')) || [];
+  textHistory = textHistory.map(item => typeof item === 'string' ? { text: item, time: null } : item);
+
   
   const btnNavGraph = document.getElementById('btn-nav-graph');
   const btnNavTraj = document.getElementById('btn-nav-traj');
@@ -426,10 +430,7 @@
   const charCount = document.getElementById('charCount');
   const sendBtn = document.getElementById('sendBtn');
   
-  let textHistory = JSON.parse(localStorage.getItem('textHistory')) || [];
-  let graphEntries = JSON.parse(localStorage.getItem('graphEntries')) || [];
-  textHistory = textHistory.map(item => typeof item === 'string' ? { text: item, time: null } : item);
-
+  
   cognitiveInput.addEventListener('input', () => {
     charCount.textContent = cognitiveInput.value.length + ' characters';
   });

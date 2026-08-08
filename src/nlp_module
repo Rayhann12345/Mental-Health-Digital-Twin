@@ -3,18 +3,11 @@ import json
 from huggingface_hub import InferenceClient
 
 # set your token here
-from dotenv import load_dotenv
-
-load_dotenv()
-
-hf_token = os.getenv("HF_TOKEN")
-
-if not hf_token:
-    raise ValueError("HF_TOKEN environment variable not set.")
+os.environ["HF_TOKEN"] = "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" 
 
 client = InferenceClient(
     model="meta-llama/Llama-3.1-8B-Instruct", 
-    token=hf_token
+    token=os.environ["HF_TOKEN"]
 )
 
 def analyze_journal_window(entries):
@@ -161,9 +154,33 @@ def analyze_journal_window(entries):
         )
         
         output = response.choices[0].message.content
-        output = output.replace("```json", "").replace("```", "").strip()
         
-        data = json.loads(output)
+        # --- THE BULLETPROOF JSON EXTRACTOR ---
+        start_idx = output.find('{')
+        
+        if start_idx != -1:
+            # Count brackets to find exactly where the first dictionary ends
+            bracket_count = 0
+            end_idx = -1
+            
+            for i, char in enumerate(output[start_idx:], start=start_idx):
+                if char == '{':
+                    bracket_count += 1
+                elif char == '}':
+                    bracket_count -= 1
+                    
+                if bracket_count == 0:
+                    end_idx = i
+                    break # We found the exact end of the first JSON object!
+                    
+            if end_idx != -1:
+                clean_json = output[start_idx:end_idx+1]
+                data = json.loads(clean_json)
+            else:
+                raise ValueError("Found opening bracket but no closing bracket.")
+        else:
+            raise ValueError("No JSON brackets found in AI response.")
+        # --------------------------------------
         
         # Enforce sliding window rules: completely remove the parameter if window isn't met
         total_entries = len(entries)
@@ -182,19 +199,15 @@ def analyze_journal_window(entries):
         print(f"Error: {e}")
         return None
 
-# testing it out with 8 entries
-entry_history = [
-    "Felt pretty good today, got some work done.",
-    "A bit stressed about upcoming deadlines but managing.",
-    "Didn't sleep well, feeling a bit foggy today.",
-    "Productive day, finished my assignments.",
-    "Had a disagreement with a friend, feeling down.",
-    "Still thinking about yesterday's argument. Hard to focus.",
-    "Trying to catch up on work but my mind keeps wandering.",
-    "I actually got a lot done today. The morning was rough and I felt a bit sluggish, but I pushed through and finished my assignment. Talked to a friend later which helped clear my head."
-]
+    output = response.choices[0].message.content
+        
+    # --- ADD THESE 3 LINES ---
+    print("\n=== RAW AI OUTPUT ===")
+    print(output)
+    print("=====================\n")
+        
+    # Bulletproof JSON extraction
+    start_idx = output.find('{')
 
-extracted_data = analyze_journal_window(entry_history)
+    
 
-if extracted_data:
-    print(json.dumps(extracted_data, indent=4))

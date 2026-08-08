@@ -80,3 +80,6 @@ def create_database():
     conn.commit()
     conn.close()
     print("Database created successfully!")
+
+if __name__ == "__main__":
+    create_database()

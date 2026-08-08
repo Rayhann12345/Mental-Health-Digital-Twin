@@ -61,7 +61,8 @@ def calculate_baseline(user_id):
     parsed_flags = [json.loads(entry[-1]) if entry[-1] else {} for entry in entries]
 
     for i, param in enumerate(PARAMETERS):
-        values = np.array([entry[i + 1] for entry in entries])
+        # Replaces any missing database values (None) with 0.0 to prevent math crashes
+        values = np.array([float(entry[i + 1]) if entry[i + 1] is not None else 0.0 for entry in entries])
 
         if param in LONG_TERM_PARAMETERS:
             baseline_value = values[-1]
